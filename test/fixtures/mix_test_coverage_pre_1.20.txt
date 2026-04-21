@@ -1,0 +1,16 @@
+Importing cover results: cover/default.coverdata
+
+Percentage | Module
+-----------|--------------------------
+     0.00% | Fixture.ModuleA
+    40.00% | Fixture.Math
+    75.00% | Fixture
+-----------|--------------------------
+    45.45% | Total
+
+Coverage test failed, threshold not met:
+
+    Coverage:   45.45%
+    Threshold:  90.00%
+
+Generated HTML coverage results in "cover" directory

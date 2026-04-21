@@ -1,8 +1,8 @@
 # Mix Coverage
 
-Parse `mix test.coverage` output (Elixir 1.20+), post or update a sticky PR comment, and enforce total and per-module coverage thresholds.
+Parse `mix test.coverage` output, post or update a sticky PR comment, and enforce total and per-module coverage thresholds.
 
-Elixir 1.20 changed the coverage table to a markdown-pipe format. This action understands the new format and replaces community actions built around the pre-1.20 layout.
+Supports both the pre-1.20 table format (plain `Percentage | Module`) and the markdown-pipe format introduced in Elixir 1.20. Useful for hex packages that test across multiple Elixir versions in the same workflow.
 
 ## Usage
 
