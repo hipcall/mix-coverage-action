@@ -48,7 +48,7 @@ fi
 
 if [ "$do_changed" = "true" ]; then
   changed_keys=$(printf '%s\n' "$CHANGED_FILES" \
-    | grep -E '\.ex$' \
+    | { grep -E '\.ex$' || true; } \
     | sed -E 's|^.*/lib/||; s|\.ex$||' \
     | sort -u)
 
