@@ -47,9 +47,11 @@ if [ "$INCLUDE_CHANGED" = "true" ] && [ "$EVENT_NAME" = "pull_request" ]; then
 fi
 
 if [ "$do_changed" = "true" ]; then
+  # Strip an optional path prefix ending in `lib/` (handles both
+  # `apps/foo/lib/bar.ex` and `lib/bar.ex`) and the `.ex` suffix.
   changed_keys=$(printf '%s\n' "$CHANGED_FILES" \
     | { grep -E '\.ex$' || true; } \
-    | sed -E 's|^.*/lib/||; s|\.ex$||' \
+    | sed -E 's|^(.*/)?lib/||; s|\.ex$||' \
     | sort -u)
 
   if [ -n "$changed_keys" ]; then
@@ -64,9 +66,17 @@ if [ "$do_changed" = "true" ]; then
         | sed -E 's/([A-Z]+)([A-Z][a-z])/\1_\2/g' \
         | tr '[:upper:]' '[:lower:]' \
         | tr '.' '/')
+      mod_basename="${underscored##*/}"
       while IFS= read -r key; do
         [ -z "$key" ] && continue
-        if [ "$underscored" = "$key" ] || [[ "$key" == */"$underscored" ]] || [[ "$underscored" == */"$key" ]]; then
+        key_basename="${key##*/}"
+        # Strict: full-path or tail match. Falls back to basename match when
+        # the filesystem doesn't mirror the module namespace (e.g. a flattened
+        # lib/ layout where lib/account.ex defines MyApp.Datalayer.Account).
+        if [ "$underscored" = "$key" ] \
+            || [[ "$key" == */"$underscored" ]] \
+            || [[ "$underscored" == */"$key" ]] \
+            || [ "$key_basename" = "$mod_basename" ]; then
           changed_modules_json=$(jq -c --arg p "$pct" --arg m "$mod" \
             '. + [{percentage: $p, module: $m}]' <<< "$changed_modules_json")
           break
