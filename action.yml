@@ -8,7 +8,7 @@ branding:
 
 inputs:
   github-token:
-    description: GitHub token used to post the PR comment. Typically ${{ secrets.GITHUB_TOKEN }}.
+    description: GitHub token used to post the PR comment. Pass secrets.GITHUB_TOKEN from the caller workflow.
     required: true
   coverage-command:
     description: Command that produces a `mix test --cover` or `mix test.coverage` table on stdout. Ignored when `coverage-file` is set.
