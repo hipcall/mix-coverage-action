@@ -1,0 +1,125 @@
+name: Mix Coverage
+description: Parse mix test.coverage output (Elixir 1.20+), post or update a sticky PR comment, and enforce total and per-module coverage thresholds.
+author: Hipcall
+
+branding:
+  icon: percent
+  color: purple
+
+inputs:
+  github-token:
+    description: GitHub token used to post the PR comment. Typically ${{ secrets.GITHUB_TOKEN }}.
+    required: true
+  coverage-command:
+    description: Command that produces a `mix test --cover` or `mix test.coverage` table on stdout. Ignored when `coverage-file` is set.
+    required: false
+    default: mix test.coverage
+  coverage-file:
+    description: Path to a file containing pre-captured coverage output. When set, `coverage-command` is skipped.
+    required: false
+    default: ""
+  minimum-coverage:
+    description: Fail the step when total coverage is below this percentage (0-100). Set to 0 to disable.
+    required: false
+    default: "0"
+  minimum-module-coverage:
+    description: Fail the step when any reported module is below this percentage (0-100). Applies to every module in the report. Set to 0 to disable.
+    required: false
+    default: "0"
+  include-changed-files:
+    description: When true and the event is `pull_request`, the PR comment includes a Changed files section listing modules mapped from files modified in the PR. Informational only; no gate is applied.
+    required: false
+    default: "false"
+  comment:
+    description: PR comment behavior. One of `sticky` (create or update a marked comment), `new` (always add a new comment), or `off` (skip commenting).
+    required: false
+    default: sticky
+  working-directory:
+    description: Directory to run the coverage command in.
+    required: false
+    default: "."
+
+outputs:
+  total-coverage:
+    description: Total coverage percentage as a string, e.g. "85.70".
+    value: ${{ steps.parse.outputs.total-coverage }}
+  failed-modules:
+    description: JSON array of modules below the per-module threshold after any changed-files filter.
+    value: ${{ steps.gate.outputs.failed-modules }}
+
+runs:
+  using: composite
+  steps:
+    - name: Run coverage command
+      id: run
+      if: inputs.coverage-file == ''
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        COVERAGE_COMMAND: ${{ inputs.coverage-command }}
+      run: |
+        set -o pipefail
+        out="${RUNNER_TEMP}/mix-coverage-action.out"
+        bash -c "$COVERAGE_COMMAND" > "$out" 2>&1 || true
+        echo "path=$out" >> "$GITHUB_OUTPUT"
+
+    - name: Resolve coverage output path
+      id: resolve
+      shell: bash
+      env:
+        COVERAGE_FILE: ${{ inputs.coverage-file }}
+        RUN_PATH: ${{ steps.run.outputs.path }}
+      run: |
+        if [ -n "$COVERAGE_FILE" ]; then
+          echo "path=$COVERAGE_FILE" >> "$GITHUB_OUTPUT"
+        else
+          echo "path=$RUN_PATH" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Parse coverage table
+      id: parse
+      shell: bash
+      env:
+        COVERAGE_PATH: ${{ steps.resolve.outputs.path }}
+      run: ${{ github.action_path }}/scripts/parse.sh
+
+    - name: Resolve changed files
+      id: changed
+      if: inputs.include-changed-files == 'true' && github.event_name == 'pull_request'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        REPO: ${{ github.repository }}
+      run: ${{ github.action_path }}/scripts/changed.sh
+
+    - name: Evaluate thresholds
+      id: evaluate
+      shell: bash
+      env:
+        PARSE_JSON: ${{ steps.parse.outputs.json }}
+        CHANGED_FILES: ${{ steps.changed.outputs.files }}
+        MIN_TOTAL: ${{ inputs.minimum-coverage }}
+        MIN_MODULE: ${{ inputs.minimum-module-coverage }}
+        INCLUDE_CHANGED: ${{ inputs.include-changed-files }}
+        EVENT_NAME: ${{ github.event_name }}
+      run: ${{ github.action_path }}/scripts/evaluate.sh
+
+    - name: Post PR comment
+      if: github.event_name == 'pull_request' && inputs.comment != 'off'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        COMMENT_MODE: ${{ inputs.comment }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        REPO: ${{ github.repository }}
+        PARSE_JSON: ${{ steps.parse.outputs.json }}
+        EVALUATION: ${{ steps.evaluate.outputs.evaluation }}
+      run: ${{ github.action_path }}/scripts/comment.sh
+
+    - name: Enforce thresholds
+      id: gate
+      shell: bash
+      env:
+        EVALUATION: ${{ steps.evaluate.outputs.evaluation }}
+      run: ${{ github.action_path }}/scripts/gate.sh

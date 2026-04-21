@@ -1,0 +1,32 @@
+Finished in 0.02 seconds (0.00s async, 0.02s sync)
+
+Result: 11 passed
+
+Generating cover results ...
+
+| Percentage | Module                                        |
+|------------|-----------------------------------------------|
+|      0.00% | Fixture                                       |
+|      0.00% | Fixture.ModuleA                               |
+|      0.00% | Fixture.ModuleB                               |
+|      0.00% | Fixture.ModuleC                               |
+|     20.00% | Fixture.ModuleD                               |
+|     40.00% | Fixture.ModuleE                               |
+|     60.00% | Fixture.ModuleF                               |
+|     60.00% | Fixture.ModuleG                               |
+|     80.00% | Fixture.ModuleH                               |
+|     80.00% | Fixture.ModuleI                               |
+|    100.00% | Fixture.Examples.LongNameTestModuleDefinition |
+|    100.00% | Fixture.ModuleJ                               |
+|    100.00% | Fixture.ModuleK                               |
+|    100.00% | Fixture.ModuleL                               |
+|    100.00% | Fixture.ModuleM                               |
+|------------|-----------------------------------------------|
+|     57.97% | Total                                         |
+
+Coverage test failed, threshold not met:
+
+    Coverage:   57.97%
+    Threshold:  90.00%
+
+Generated HTML coverage results in "cover" directory
