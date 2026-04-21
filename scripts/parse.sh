@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Parse the Elixir 1.20+ `mix test.coverage` / `mix test --cover` table.
+# Parse the `mix test.coverage` / `mix test --cover` table.
+# Accepts both pre-1.20 format (plain `Percentage | Module`) and the
+# 1.20+ markdown-pipe format (`| Percentage | Module |`).
 # Requires: bash 3.2+, sed, jq.
 
 set -euo pipefail
@@ -11,7 +13,9 @@ if [ ! -r "$COVERAGE_PATH" ]; then
   exit 1
 fi
 
-row_re='^\|[[:space:]]+([0-9]+(\.[0-9]+)?)%[[:space:]]*\|[[:space:]]*(.+[^[:space:]])[[:space:]]*\|$'
+# Leading and trailing pipes are optional: 1.20+ emits them, older Elixir does not.
+# Module name excludes `|` so trailing pipes don't leak into the capture.
+row_re='^[[:space:]]*\|?[[:space:]]*([0-9]+(\.[0-9]+)?)%[[:space:]]*\|[[:space:]]*([^|]*[^|[:space:]])[[:space:]]*\|?[[:space:]]*$'
 
 total=""
 modules_json='[]'
