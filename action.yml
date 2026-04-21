@@ -1,5 +1,5 @@
 name: Mix Coverage
-description: Parse mix test.coverage output (Elixir 1.20+), post or update a sticky PR comment, and enforce total and per-module coverage thresholds.
+description: Parse mix test.coverage output (Elixir 1.20+), post a sticky PR comment, and enforce coverage thresholds.
 author: Hipcall
 
 branding:
